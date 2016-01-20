@@ -2,7 +2,7 @@ Package.describe({
   name: 'silveirado:keycloak-auth',
   version: '0.9.0',
   summary: 'Keycloak OAuth flow in Meteor',
-  git: '',
+  git: 'https://github.com/silveirado/meteor-keycloak-auth.git',
   documentation: 'README.md'
 });
 
@@ -12,7 +12,6 @@ Package.onUse(function(api) {
   api.use('oauth2', ['client', 'server']);
   api.use('oauth', ['client', 'server']);
   api.use('http', ['server']);
-  api.use('mrt:q', ['client']);
   api.use('templating', 'client');
   api.use('underscore', 'server');
   api.use('random', 'client');
