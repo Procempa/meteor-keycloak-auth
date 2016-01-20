@@ -1,33 +1,10 @@
-Keycloak = {};
-
-Meteor.startup(() => {
-  const fs = Npm.require('fs'),
-    json = process.env.PWD + '/server/keycloak.json';
-
-  if (fs.existsSync(json)) {
-    var data = JSON.parse(fs.readFileSync(json, 'utf8'));
-    ServiceConfiguration.configurations.upsert({
-      service: "keycloak"
-    }, {
-      $set: {
-        realmUrl: data['auth-server-url'] + '/realms/' + data['realm'],
-        //loginStyle: "redirect",
-        loginStyle: "popup",
-        resource: data['resource']
-      }
-    })
-  }
-});
-
+Keycloak.CurrentUserId = null;
 
 OAuth.registerService('keycloak', 2, null, function(query) {
-
-  var login = Meteor.wrapAsync(doLogin);
-
-  var res = login(query);
+  var login = Meteor.wrapAsync(doLogin),
+    res = login(query);
 
   return res;
-
 });
 
 Keycloak.retrieveCredential = function(credentialToken, credentialSecret) {
@@ -84,15 +61,20 @@ function doLogin(query, cb) {
 
       let grant = createGrant(json, config.resource, publicKey);
 
+
       let result = {
         serviceData: {
-					id: grant.access_token.content.preferred_username,
+          id: grant.access_token.content.preferred_username,
           token: grant.access_token.token,
           expiresAt: (+new Date) + (1000 * grant.expires_in),
           name: grant.access_token.content.name,
           email: grant.access_token.content.email,
           given_name: grant.access_token.content.given_name,
-          family_name: grant.access_token.content.family_name
+          family_name: grant.access_token.content.family_name,
+          roles: {
+            resource_access: grant.access_token.content.resource_access,
+            realm_access: grant.access_token.content.realm_access
+          }
         },
         options: {
           profile: {
@@ -103,7 +85,6 @@ function doLogin(query, cb) {
       cb(null, result);
     });
 }
-
 
 function createGrant(rawData, resource, publicKey) {
   var grantData = rawData;
@@ -139,15 +120,12 @@ function createGrant(rawData, resource, publicKey) {
   return validateGrant(grant, publicKey);
 };
 
-
-
 function validateGrant(grant, publicKey) {
   grant.access_token = validateToken(grant.access_token, publicKey);
   grant.refresh_token = validateToken(grant.refresh_token, publicKey);
   grant.id_token = validateToken(grant.id_token, publicKey);
   return grant;
 }
-
 
 validateToken = function(token, publicKey) {
   if (!token) {
@@ -170,3 +148,43 @@ validateToken = function(token, publicKey) {
 
   return token;
 };
+
+Keycloak.isInRole = function(role) {
+  var appRole = (role.indexOf("app:") === 0),
+    realmRole = (role.indexOf("realm:") === 0),
+    config = ServiceConfiguration.configurations.findOne({
+      service: 'keycloak'
+    }),
+    user = Meteor.users.findOne({
+      _id: Keycloak.CurrentUserId
+    }, {
+      fields: {
+        'services.keycloak.roles': 1
+      }
+    });
+
+  if (user && user.services && user.services.keycloak && user.services.keycloak.roles) {
+    if (appRole) {
+      let access = user.services.keycloak.roles.resource_access || {},
+        resource = access[config.resource] || {},
+        roles = resource.roles || []
+      role = role.split(':')[1];
+      return _.contains(roles, role);
+    } else if (realmRole) {
+      let realm = user.services.keycloak.roles.realm_access || {},
+        roles = realm.roles || []
+      role = role.split(':')[1];
+      return _.contains(roles, role);
+    } else {
+      let access = user.services.keycloak.roles.resource_access || {},
+        resource = access[config.resource] || {},
+        realm = user.services.keycloak.roles.realm_access || {},
+        resourceRoles = resource.roles || [],
+        realmRoles = realm.roles || [];
+      return _.contains(resourceRoles, role) || _.contains(realmRoles, role);
+
+    }
+  }
+  return false;
+
+}
