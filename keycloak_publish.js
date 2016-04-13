@@ -11,9 +11,6 @@ Meteor.publish("keycloak.roles", function() {
       fields: {
         'services.keycloak.roles': 1
       }
-    }),
-    config = ServiceConfiguration.configurations.findOne({
-      service: 'keycloak'
     });
 
   if (user && user.services && user.services.keycloak && user.services.keycloak.roles) {

@@ -13,13 +13,15 @@ Package.onUse(function(api) {
   api.use('oauth', ['client', 'server']);
   api.use('http', ['server']);
   api.use('templating', 'client');
-  api.use('underscore', 'server');
+	api.use('underscore', 'server');
   api.use('random', 'client');
   api.use('accounts-base', ['client', 'server']);
   api.imply('accounts-base', ['client', 'server']);
   api.use('accounts-oauth', ['client', 'server']);
   api.use('mongo', ['client', 'server']);
   api.use('service-configuration', ['client', 'server']);
+
+	api.addFiles('asset.txt', 'server', {isAsset:true});
 
   api.export('Keycloak');
 

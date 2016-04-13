@@ -1,10 +1,26 @@
+import http   from 'http';
+import https  from 'https';
+import Future from 'fibers/future';
+
 Keycloak.CurrentUserId = null;
 
-OAuth.registerService('keycloak', 2, null, function(query) {
-  var login = Meteor.wrapAsync(doLogin),
-    res = login(query);
+Meteor.methods({
+	getKeycloakConfiguration:function(){
+		var config = ServiceConfiguration.configurations.findOne({
+			service: 'keycloak'
+		});
+		return config;
+	}
+});
 
-  return res;
+OAuth.registerService('keycloak', 2, null, function(query) {
+  var future = new Future();
+
+	doLogin(query, function (err, result) {
+		future.return(result);
+	});
+
+  return future.wait();
 });
 
 Keycloak.retrieveCredential = function(credentialToken, credentialSecret) {
@@ -22,7 +38,7 @@ function doLogin(query, cb) {
     params = 'code=' + code + '&application_session_state=' + sessionId + '&redirect_uri=' + redirectUri,
     uri = config.realmUrl + '/tokens/access/codes',
     fs = Npm.require('fs'),
-    json = process.env.PWD + '/server/keycloak.json',
+    json =fs.realpathSync(process.cwd() + '/../server/assets/app/keycloak.json'),
     configFile = JSON.parse(fs.readFileSync(json, 'utf8')),
     headers = {
       'Content-Length': params.length,
@@ -35,9 +51,8 @@ function doLogin(query, cb) {
   options.headers = headers;
   options.method = 'POST';
 
-  let protocol = Npm.require(options.protocol === 'https:' ? 'https' : 'http');
-
-  let promise = new Promise(function(resolve, reject) {
+  let protocol = options.protocol === 'https:' ? https : http; //Npm.require(options.protocol === 'https:' ? 'https' : 'http');
+  new Promise(function(resolve) {
       let request = protocol.request(options, (response) => {
         let json = '';
         response.on('data', (d) => {
@@ -53,7 +68,7 @@ function doLogin(query, cb) {
     .then(function(json) {
       let plainKey = configFile['realm-public-key'];
       let publicKey = "-----BEGIN PUBLIC KEY-----\n";
-      for (i = 0; i < plainKey.length; i = i + 64) {
+      for (var i = 0; i < plainKey.length; i = i + 64) {
         publicKey += plainKey.substring(i, i + 64);
         publicKey += "\n";
       }
@@ -66,7 +81,7 @@ function doLogin(query, cb) {
         serviceData: {
           id: grant.access_token.content.preferred_username,
           token: grant.access_token.token,
-          expiresAt: (+new Date) + (1000 * grant.expires_in),
+          expiresAt: (+new Date()) + (1000 * grant.expires_in),
           name: grant.access_token.content.name,
           email: grant.access_token.content.email,
           given_name: grant.access_token.content.given_name,
@@ -82,6 +97,7 @@ function doLogin(query, cb) {
           }
         }
       };
+
       cb(null, result);
     });
 }
@@ -118,7 +134,7 @@ function createGrant(rawData, resource, publicKey) {
   grant.__raw = rawData;
 
   return validateGrant(grant, publicKey);
-};
+}
 
 function validateGrant(grant, publicKey) {
   grant.access_token = validateToken(grant.access_token, publicKey);
@@ -127,7 +143,7 @@ function validateGrant(grant, publicKey) {
   return grant;
 }
 
-validateToken = function(token, publicKey) {
+function validateToken(token, publicKey) {
   if (!token) {
     return;
   }
@@ -139,7 +155,7 @@ validateToken = function(token, publicKey) {
   if (token.content.iat < this.notBefore) {
     return;
   }
-  var crypto = Npm.require('crypto')
+  var crypto = Npm.require('crypto');
   var verify = crypto.createVerify('RSA-SHA256');
   verify.update(token.signed);
   if (!verify.verify(publicKey, token.signature, 'base64')) {
@@ -147,7 +163,7 @@ validateToken = function(token, publicKey) {
   }
 
   return token;
-};
+}
 
 Keycloak.isInRole = function(role) {
   var appRole = (role.indexOf("app:") === 0),
@@ -167,12 +183,12 @@ Keycloak.isInRole = function(role) {
     if (appRole) {
       let access = user.services.keycloak.roles.resource_access || {},
         resource = access[config.resource] || {},
-        roles = resource.roles || []
+        roles = resource.roles || [];
       role = role.split(':')[1];
       return _.contains(roles, role);
     } else if (realmRole) {
       let realm = user.services.keycloak.roles.realm_access || {},
-        roles = realm.roles || []
+        roles = realm.roles || [];
       role = role.split(':')[1];
       return _.contains(roles, role);
     } else {
@@ -187,4 +203,4 @@ Keycloak.isInRole = function(role) {
   }
   return false;
 
-}
+};
