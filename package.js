@@ -1,8 +1,8 @@
 Package.describe({
-  name: 'silveirado:keycloak-auth',
+  name: 'procempa:keycloak-auth',
   version: '0.9.0',
   summary: 'Keycloak OAuth flow in Meteor',
-  git: 'https://github.com/silveirado/meteor-keycloak-auth.git',
+  git: 'https://github.com/Procempa/meteor-keycloak-auth.git',
   documentation: 'README.md'
 });
 
