@@ -15,6 +15,7 @@ Meteor.publish("keycloak.roles", function() {
 
   if (user && user.services && user.services.keycloak && user.services.keycloak.roles) {
     _.each(user.services.keycloak.roles, (value, key) => {
+			console.log(value);
       self.added("keycloak.roles", key, value);
     });
   }

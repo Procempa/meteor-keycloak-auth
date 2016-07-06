@@ -13,7 +13,7 @@ Package.onUse(function(api) {
   api.use('oauth', ['client', 'server']);
   api.use('http', ['server']);
   api.use('templating', 'client');
-	api.use('underscore', 'server');
+	api.use('underscore', ['client', 'server']);
   api.use('random', 'client');
   api.use('accounts-base', ['client', 'server']);
   api.imply('accounts-base', ['client', 'server']);
