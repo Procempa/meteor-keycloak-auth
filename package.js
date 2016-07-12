@@ -1,6 +1,6 @@
 Package.describe({
   name: 'procempa:keycloak-auth',
-  version: '0.9.1',
+  version: '0.9.2',
   summary: 'Keycloak OAuth flow in Meteor',
   git: 'https://github.com/Procempa/meteor-keycloak-auth.git',
   documentation: 'README.md'
