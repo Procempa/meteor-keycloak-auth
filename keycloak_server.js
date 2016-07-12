@@ -43,11 +43,18 @@ function doLogin(query, cb) {
         fs = Npm.require('fs'),
         json = fs.realpathSync(process.cwd() + '/../server/assets/app/keycloak.json'),
         configFile = JSON.parse(fs.readFileSync(json, 'utf8')),
-        headers = {
-            'Content-Length': params.length,
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': 'Basic ' + new Buffer(config.resource + ':' + configFile['realm-public-key']).toString('base64'),
-        };
+        secret = '';
+    if (configFile.credentials && configFile.credentials.secret) {
+        secret = configFile.credentials.secret;
+    } else {
+        secret = configFile['realm-public-key'];
+    }
+
+    let headers = {
+        'Content-Length': params.length,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + new Buffer(config.resource + ':' + secret).toString('base64')
+    };
     let options = URL.parse(uri);
     options.headers = headers;
     options.method = 'POST';
