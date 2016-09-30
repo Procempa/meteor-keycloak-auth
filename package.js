@@ -1,42 +1,36 @@
+/* global Package, Npm */
+
 Package.describe({
-  name: 'procempa:keycloak-auth',
-  version: '0.9.2',
-  summary: 'Keycloak OAuth flow in Meteor',
-  git: 'https://github.com/Procempa/meteor-keycloak-auth.git',
-  documentation: 'README.md'
+	name: 'procempa:keycloak-auth',
+	version: '1.0.0',
+	summary: 'Meteor Keycloak Handshake flow',
+	git: 'https://github.com/Procempa/meteor-keycloak-auth.git',
+	documentation: 'README.md'
 });
 
 Package.onUse(function(api) {
-  api.versionsFrom('1.2.1');
-  api.use('ecmascript');
-  api.use('oauth2', ['client', 'server']);
-  api.use('oauth', ['client', 'server']);
-  api.use('http', ['server']);
-  api.use('templating', 'client');
-	api.use('underscore', ['client', 'server']);
-  api.use('random', 'client');
-  api.use('accounts-base', ['client', 'server']);
-  api.imply('accounts-base', ['client', 'server']);
-  api.use('accounts-oauth', ['client', 'server']);
-  api.use('mongo', ['client', 'server']);
-  api.use('service-configuration', ['client', 'server']);
+	api.versionsFrom('1.4.1.1');
+	api.use('ecmascript');
+	api.export('KeycloakServer', 'server');
+	api.export('KeycloakClient', 'client');
+	api.mainModule('client-main.js', 'client');
+	api.mainModule('server-main.js', 'server');
+	api.addAssets('../../private/keycloak.json', 'server');
+});
 
-	api.addFiles('asset.txt', 'server', {isAsset:true});
+Package.onTest(function(api) {
+	api.use('ecmascript');
+	api.use('tinytest');
+	api.use('procempa:meteor-keycloak');
+	api.mainModule('keycloak-tests.js');
+});
 
-  api.export('Keycloak');
-
-  api.addFiles(
-    ['keycloak_configure.html', 'keycloak_configure.js'], 'client');
-
-  api.addFiles('token.js', 'server');
-  api.addFiles('grant.js', 'server');
-
-  api.addFiles('keycloak_common.js', ['client', 'server']);
-  api.addFiles('keycloak_accounts.js', ['client', 'server']);
-	api.addFiles('keycloak_startup.js', 'server');
-	api.addFiles('keycloak_publish.js', 'server');
-	api.addFiles('keycloak_server.js', 'server');
-  api.addFiles('keycloak_client.js', 'client');
-
-
+Npm.depends({
+	'lodash': '4.16.1',
+	'fallbackjs': '1.1.8',
+	'localforage': '1.4.2',
+	'keycloak-auth-utils': '2.2.1',
+	'babel-plugin-transform-decorators-legacy': '1.3.4',
+	'babel-plugin-transform-class-properties': '6.11.5',
+	'babel-plugin-transform-strict-mode': '6.11.3'
 });
