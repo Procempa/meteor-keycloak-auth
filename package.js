@@ -18,12 +18,6 @@ Package.onUse(function(api) {
 	api.addAssets('../../private/keycloak.json', 'server');
 });
 
-Package.onTest(function(api) {
-	api.use('ecmascript');
-	api.use('tinytest');
-	api.use('procempa:meteor-keycloak');
-	api.mainModule('keycloak-tests.js');
-});
 
 Npm.depends({
 	'lodash': '4.16.1',

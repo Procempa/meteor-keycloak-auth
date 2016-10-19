@@ -2,8 +2,8 @@ import { Meteor } from 'meteor/meteor';
 import { DDPCommon } from 'meteor/ddp-common';
 import { DISCARDED_MESSAGES, isInRole } from './common';
 import _ from 'lodash';
-import 'fallbackjs/fallback';
 /* global fallback */
+import 'fallbackjs/fallback';
 import localforage from 'localforage';
 import { EJSON } from 'meteor/ejson';
 
@@ -15,6 +15,8 @@ export class KeycloakClientImpl {
 	_loggedIn = false;
 	_user: null;
 	_connection;
+
+	events = {};
 
 	get loginInProgress() {
 		return localforage.getItem(KEYCLOAK_INPROGESS_KEY);
@@ -69,6 +71,7 @@ export class KeycloakClientImpl {
 													client: ((adapter.resourceAccess[this._config.clientId] || {}).roles || [])
 												}
 											};
+											this._trigger('login', this._user);
 											this._logout = adapter.logout;
 											this._loggedIn = true;
 											localforage
@@ -101,6 +104,7 @@ export class KeycloakClientImpl {
 		if (this._logout) {
 			this._logout();
 		}
+		this._trigger('logout');
 		return true;
 	}
 
@@ -183,5 +187,15 @@ export class KeycloakClientImpl {
 			});
 		}
 		return this._KeycloakPromise;
+	}
+
+	on(event, cb){
+		let handlers = this.events[event] || [];
+		handlers.push(cb);
+		this.events[event] = handlers;
+	}
+
+	_trigger(event, data){
+		_.forEach(this.events[event], cb => cb(data));
 	}
 }
