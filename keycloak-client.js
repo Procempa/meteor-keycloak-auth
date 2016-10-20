@@ -2,12 +2,13 @@ import { Meteor } from 'meteor/meteor';
 import { DDPCommon } from 'meteor/ddp-common';
 import { DISCARDED_MESSAGES, isInRole } from './common';
 import _ from 'lodash';
-/* global fallback */
 import 'fallbackjs/fallback';
+/* global fallback */
 import localforage from 'localforage';
 import { EJSON } from 'meteor/ejson';
 
 const KEYCLOAK_INPROGESS_KEY = 'keycloak-login-inprogress';
+const KEYCLOAK_TOKEN_EXPIRES_KEY = 'keycloak-token-expires';
 const KEYCLOAK_TOKEN_TIMEOUT = 10;
 export class KeycloakClientImpl {
 
@@ -15,8 +16,52 @@ export class KeycloakClientImpl {
 	_loggedIn = false;
 	_user: null;
 	_connection;
-
 	events = {};
+
+	constructor(connection) {
+		this._connection = connection || Meteor.connection;
+		this._connection.onReconnect = () => {
+			let stream_send = this._connection._stream.send;
+			this._connection._stream.send = (raw_msg) => {
+				let msg_obj = DDPCommon.parseDDP(raw_msg);
+				if (_.indexOf(DISCARDED_MESSAGES, msg_obj.msg) === -1 && this._loggedIn) {
+					this
+						.login()
+						.then(() => {
+							this
+								.KeycloakPromise()
+								.then((adapter) => {
+									adapter.updateToken(KEYCLOAK_TOKEN_TIMEOUT)
+										.success(() => {
+											let raw_token = EJSON.stringify({
+												access_token: adapter.token,
+												refresh_token: adapter.refreshToken,
+												id_token: adapter.idToken,
+												expires_in: adapter.tokenParsed.exp,
+												token_type: adapter.tokenParsed.typ
+											});
+											msg_obj.raw_token = raw_token;
+											let msg_sent = DDPCommon.stringifyDDP(msg_obj);
+											stream_send.apply(this._connection._stream, [msg_sent]);
+										})
+										.error((error) => {
+											console.error(error);
+											this.logout();
+										});
+								});
+						});
+				} else {
+					stream_send.apply(this._connection._stream, [raw_msg]);
+				}
+			};
+		};
+		localforage.getItem(KEYCLOAK_TOKEN_EXPIRES_KEY, (err, exp) => {
+			let expiresIn = (exp * 1) - Math.ceil(new Date().getTime() / 1000) - 1;
+			if (expiresIn > 0) {
+				this.login();
+			}
+		});
+	}
 
 	get loginInProgress() {
 		return localforage.getItem(KEYCLOAK_INPROGESS_KEY);
@@ -71,6 +116,7 @@ export class KeycloakClientImpl {
 													client: ((adapter.resourceAccess[this._config.clientId] || {}).roles || [])
 												}
 											};
+											localforage.setItem(KEYCLOAK_TOKEN_EXPIRES_KEY, adapter.tokenParsed.exp);
 											this._trigger('login', this._user);
 											this._logout = adapter.logout;
 											this._loggedIn = true;
@@ -105,6 +151,7 @@ export class KeycloakClientImpl {
 			this._logout();
 		}
 		this._trigger('logout');
+		localforage.removeItem(KEYCLOAK_TOKEN_EXPIRES_KEY);
 		return true;
 	}
 
@@ -128,45 +175,6 @@ export class KeycloakClientImpl {
 			});
 		}
 		return this.isInRolePromise;
-	}
-
-	constructor(connection) {
-		this._connection = connection || Meteor.connection;
-		this._connection.onReconnect = () => {
-			let stream_send = this._connection._stream.send;
-			this._connection._stream.send = (raw_msg) => {
-				let msg_obj = DDPCommon.parseDDP(raw_msg);
-				if (_.indexOf(DISCARDED_MESSAGES, msg_obj.msg) === -1 && this._loggedIn) {
-					this
-						.login()
-						.then(() => {
-							this
-								.KeycloakPromise()
-								.then((adapter) => {
-									adapter.updateToken(KEYCLOAK_TOKEN_TIMEOUT)
-										.success(() => {
-											let raw_token = EJSON.stringify({
-												access_token: adapter.token,
-												refresh_token: adapter.refreshToken,
-												id_token: adapter.idToken,
-												expires_in: adapter.tokenParsed.exp,
-												token_type: adapter.tokenParsed.typ
-											});
-											msg_obj.raw_token = raw_token;
-											let msg_sent = DDPCommon.stringifyDDP(msg_obj);
-											stream_send.apply(this._connection._stream, [msg_sent]);
-										})
-										.error((error) => {
-											console.error(error);
-											this.logout();
-										});
-								});
-						});
-				} else {
-					stream_send.apply(this._connection._stream, [raw_msg]);
-				}
-			};
-		};
 	}
 
 	KeycloakPromise() {
