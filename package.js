@@ -9,7 +9,6 @@ Package.describe({
 });
 
 Package.onUse(function(api) {
-	api.versionsFrom('1.4.1.1');
 	api.use('ecmascript');
 	api.export('KeycloakServer', 'server');
 	api.export('KeycloakClient', 'client');
