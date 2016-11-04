@@ -8,14 +8,14 @@ Package.describe( {
 	documentation: 'README.md'
 } );
 
-Package.onUse( function( api ) {
-	api.use( 'ecmascript' );
-	api.export( 'KeycloakServer', 'server' );
-	api.export( 'KeycloakClient', 'client' );
-	api.mainModule( 'client-main.js', 'client' );
-	api.mainModule( 'server-main.js', 'server' );
-	api.addAssets( '../../private/keycloak.json', 'server' );
-} );
+Package.onUse(function(api) {
+	api.use('ecmascript');
+	api.export('KeycloakServer', 'server');
+	api.export('KeycloakClient', 'client');
+	api.mainModule('client-main.js', 'client');
+	api.mainModule('server-main.js', 'server');
+	api.addAssets('../../private/keycloak.json', 'server');
+});
 
 
 Npm.depends( {
