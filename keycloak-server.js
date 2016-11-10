@@ -11,10 +11,9 @@ import Q from 'q';
 export class KeycloakServerImpl {
 	user;
 	grant;
-	tokenDeferred = Q.defer();
 
 	get bearer_token() {
-		return this.tokenDeferred.promise;
+		return _.get( this, 'tokenDeferred.promise' );
 	}
 
 	constructor( server ) {
@@ -26,6 +25,7 @@ export class KeycloakServerImpl {
 			let session = this._server.sessions[ connection.id ];
 			let socket = session.socket;
 			let processMessage = socket._meteorSession.processMessage;
+			this.tokenDeferred = Q.defer();
 			socket._meteorSession.processMessage = Meteor.bindEnvironment( ( msg_in ) => {
 				if ( _.indexOf( DISCARDED_MESSAGES, msg_in.msg ) === -1 && msg_in.raw_token ) {
 					let grant = grantManager.createGrant( msg_in.raw_token );
