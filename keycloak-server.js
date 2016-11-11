@@ -29,8 +29,9 @@ export class KeycloakServerImpl {
 			let processMessage = socket._meteorSession.processMessage;
 			socket._meteorSession.processMessage = Meteor.bindEnvironment( ( msg_in ) => {
 				if ( _.indexOf( DISCARDED_MESSAGES, msg_in.msg ) === -1 && msg_in.raw_token ) {
-					this.tokenDeferred = this.tokenDeferred.promise.inspect()
-						.state === 'fulfilled' ? Q.defer() : this.tokenDeferred;
+					let realized = this.tokenDeferred.promise.inspect().state === 'fulfilled';
+					this.tokenDeferred = realized ? Q.defer() : this.tokenDeferred;
+					// console.log( '====> Token ' + ( realized ? 'novo' : '' ) + ': ', this.tokenDeferred );
 
 					let grant = grantManager.createGrant( msg_in.raw_token );
 					let fut = new Future();
