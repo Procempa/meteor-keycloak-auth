@@ -1,3 +1,4 @@
+/*global process*/
 import { Meteor } from 'meteor/meteor';
 import { DISCARDED_MESSAGES, isInRole } from './common';
 import _ from 'lodash';
@@ -20,7 +21,8 @@ export class KeycloakServerImpl {
 
 	constructor( server ) {
 		this._server = server || Meteor.server;
-		let keycloakJson = EJSON.parse( Assets.getText( '../../private/keycloak.json' ) );
+		let env = process.env.KEYCLOAK_ENV || '-dev';
+		let keycloakJson = EJSON.parse( Assets.getText( '../../private/keycloak' + env + '.json' ) );
 		let keycloakConfig = new Config( keycloakJson );
 		let grantManager = new GrantManager( keycloakConfig );
 		this._server.onConnection( ( connection ) => {

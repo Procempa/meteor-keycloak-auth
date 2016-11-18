@@ -76,7 +76,7 @@ Template.restrictedSubscribe.events({
 Example in Meteor Server
 -----------------------------------------------
 
-First create a file in ```/private/keycloak.json``` with your client instalation, ie:
+First create a file in ```/private/keycloak[-dev|-hom|-pro].json``` with your client instalation, ie:
 
 ```json
 {
