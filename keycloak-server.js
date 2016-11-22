@@ -1,13 +1,12 @@
-/*global process*/
+/*globals Assets*/
 import { Meteor } from 'meteor/meteor';
+import { ServiceConfiguration } from 'meteor/service-configuration';
 import { DISCARDED_MESSAGES, isInRole } from './common';
 import _ from 'lodash';
 import { Config, GrantManager } from 'keycloak-auth-utils';
-import { EJSON } from 'meteor/ejson';
 import Future from 'fibers/future';
 import Q from 'q';
-/* global Assets*/
-
+import { EJSON } from 'meteor/ejson';
 
 export class KeycloakServerImpl {
 	user;
@@ -21,9 +20,23 @@ export class KeycloakServerImpl {
 
 	constructor( server ) {
 		this._server = server || Meteor.server;
-		let env = process.env.KEYCLOAK_ENV || '-dev';
-		let keycloakJson = EJSON.parse( Assets.getText( '../../private/keycloak' + env + '.json' ) );
+
+		let keycloakJson = ServiceConfiguration.configurations.findOne( { 'service': 'keycloak-config' } );
+		if ( !keycloakJson ) {
+			console.warn( `
+--------------------------------------------------------------------------------------------------------------------
+There is no 'service': 'keycloak-config' object in collection meteor_accounts_loginServiceConfiguration.
+You can add an object with the same attributes as keycloak.json, plus the attribute 'service': 'keycloak-config'
+In the meanwhile, the file private/keycloak.json will be used.
+			` );
+			keycloakJson = EJSON.parse( Assets.getText( '../../private/keycloak.json' ) );
+			if ( !keycloakJson ) {
+				console.log( 'The file private/keycloak.json was not found either' );
+				throw new Meteor.Error( 'Add the apropriated object to MongoCollection or add the keycloak.json file to private folder.' );
+			}
+		}
 		let keycloakConfig = new Config( keycloakJson );
+
 		let grantManager = new GrantManager( keycloakConfig );
 		this._server.onConnection( ( connection ) => {
 			let session = this._server.sessions[ connection.id ];
