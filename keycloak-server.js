@@ -36,6 +36,7 @@ In the meanwhile, the file private/keycloak.json will be used.
 			}
 		}
 		let keycloakConfig = new Config( keycloakJson );
+		console.info( 'Keycloak Server (Module):', keycloakConfig.authServerUrl );
 
 		let grantManager = new GrantManager( keycloakConfig );
 		this._server.onConnection( ( connection ) => {
