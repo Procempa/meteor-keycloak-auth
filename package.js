@@ -9,8 +9,8 @@ Package.describe({
 });
 
 Package.onUse(function(api) {
-	api.use('ecmascript');
-	api.use('service-configuration');
+	api.use('ecmascript@0.1.4');
+	api.use('service-configuration@1.0.1');
 	api.export('KeycloakServer', 'server');
 	api.export('KeycloakClient', 'client');
 	api.mainModule('client-main.js', 'client');
