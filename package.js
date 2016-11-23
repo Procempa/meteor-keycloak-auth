@@ -1,25 +1,24 @@
 /* global Package, Npm */
 
-Package.describe( {
+Package.describe({
 	name: 'procempa:keycloak-auth',
 	version: '1.0.0',
 	summary: 'Meteor Keycloak Handshake flow',
 	git: 'https://github.com/Procempa/meteor-keycloak-auth.git',
 	documentation: 'README.md'
-} );
+});
 
-Package.onUse( function( api ) {
-	api.use( 'ecmascript' );
-	api.use( 'service-configuration' );
-	api.export( 'KeycloakServer', 'server' );
-	api.export( 'KeycloakClient', 'client' );
-	api.mainModule( 'client-main.js', 'client' );
-	api.mainModule( 'server-main.js', 'server' );
-	api.addAssets( '../../private/keycloak.json', 'server' );
-} );
+Package.onUse(function(api) {
+	api.use('ecmascript');
+	api.use('service-configuration');
+	api.export('KeycloakServer', 'server');
+	api.export('KeycloakClient', 'client');
+	api.mainModule('client-main.js', 'client');
+	api.mainModule('server-main.js', 'server');
+});
 
 
-Npm.depends( {
+Npm.depends({
 	'lodash': '4.16.1',
 	'fallbackjs': '1.1.8',
 	'localforage': '1.4.2',
@@ -28,4 +27,4 @@ Npm.depends( {
 	'babel-plugin-transform-class-properties': '6.11.5',
 	'babel-plugin-transform-strict-mode': '6.11.3',
 	'q': '1.4.1'
-} );
+});
