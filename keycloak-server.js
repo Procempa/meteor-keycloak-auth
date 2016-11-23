@@ -22,15 +22,31 @@ export class KeycloakServerImpl {
 		this._server = server || Meteor.server;
 
 		let keycloakJson = ServiceConfiguration.configurations.findOne({ 'service': 'keycloak' });
-		if (!keycloakJson) {
-			console.error(`
+
+		if (keycloakJson) {
+			this.start(keycloakJson);
+		} else {
+			console.log(`
 --------------------------------------------------------------------------------------------------------------------
-There is no 'service': 'keycloak-config' object in collection meteor_accounts_loginServiceConfiguration.
-You can add an object with the same attributes as keycloak.json, plus the attribute 'service': 'keycloak-config'
-In the meanwhile, the file private/keycloak.json will be used.
+There is no 'service': 'keycloak' object in collection meteor_accounts_loginServiceConfiguration.
+You need to add an object with the same attributes as keycloak.json, plus the attribute
+'service': 'keycloak'
+in that collection so it starts working.
+--------------------------------------------------------------------------------------------------------------------
 			`);
-			throw new Meteor.Error(404, 'Add the apropriated object to meteor_accounts_loginServiceConfiguration.');
+			this.waitingConfig = true;
+			let observable = ServiceConfiguration.configurations.find({ 'service': 'keycloak' }).observe({
+				added: (config) => {
+					observable.stop();
+					this.start(config);
+				}
+			});
 		}
+	}
+
+	start(keycloakJson) {
+		console.log('STARTING');
+		_.unset(this, 'waitingConfig');
 		let keycloakConfig = new Config(keycloakJson);
 		console.info('Keycloak Server (Module):', keycloakConfig.authServerUrl);
 
