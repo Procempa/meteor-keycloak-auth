@@ -7,19 +7,19 @@ let KeycloakServer = new KeycloakServerImpl();
 
 Meteor.Keycloak = KeycloakServer;
 
-Meteor.methods({
+Meteor.methods( {
 	'getKeycloakClientConfiguration': function() {
-		let config = ServiceConfiguration.configrations.findOne({ 'service': 'keycloak' });
-		if (config) {
+		let config = ServiceConfiguration.configurations.findOne( { 'service': 'keycloak' } );
+		if ( config ) {
 			return {
-				'url': _.get(config, 'auth-server-url'),
-				'realm': _.get(config, 'realm'),
-				'clientId': _.get(config, 'resource')
+				'url': _.get( config, 'auth-server-url' ),
+				'realm': _.get( config, 'realm' ),
+				'clientId': _.get( config, 'resource' )
 			};
 		} else {
-			throw new Meteor.Error(404, 'No configurantion found for Keycloak');
+			throw new Meteor.Error( 404, 'No configurantion found for Keycloak' );
 		}
 	}
-});
+} );
 
 export { KeycloakServer };
